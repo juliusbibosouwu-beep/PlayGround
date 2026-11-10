@@ -4,8 +4,8 @@ const $ = id => document.getElementById(id);
 const canvas = $('scene');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x46534c);
-scene.fog = new THREE.FogExp2(0x46534c, 0.021);
-const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 160);
+scene.fog = new THREE.FogExp2(0x46534c, 0.008);
+const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 420);
 camera.position.set(0, 1.65, 8);
 const renderer = new THREE.WebGLRenderer({canvas, antialias:true, powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.7));
@@ -28,12 +28,12 @@ const mat = (color, roughness=.82, metalness=0) => new THREE.MeshStandardMateria
 const concrete=mat(0x50564e), darkConcrete=mat(0x343a35), rust=mat(0x55493b), steel=mat(0x303936,.5,.65), olive=mat(0x4c5542), sand=mat(0x8c8063), black=mat(0x151a19,.34,.7), gunMetal=mat(0x313a39,.27,.8), rubber=mat(0x181b19), wood=mat(0x604e3a), zombieSkin=mat(0x687263), rotten=mat(0x455448), shirt=mat(0x4b5147), blood=mat(0x542a24);
 function box(parent, name, size, position, material, cast=true){const m=new THREE.Mesh(new THREE.BoxGeometry(...size),material);m.name=name;m.position.set(...position);m.castShadow=cast;m.receiveShadow=true;parent.add(m);return m;}
 
-// Concrete yard, perimeter and the silhouettes of an abandoned industrial outpost.
-const ground= new THREE.Mesh(new THREE.PlaneGeometry(180,180),mat(0x343b37));ground.rotation.x=-Math.PI/2;ground.position.y=-.04;ground.receiveShadow=true;scene.add(ground);
-const road=new THREE.Mesh(new THREE.PlaneGeometry(8,130),mat(0x454b46));road.rotation.x=-Math.PI/2;road.position.set(0,.002,-30);scene.add(road);
-for(let i=-5;i<24;i++){const seam=box(scene,'road seam',[.04,.012,.09],[0,.008,-i*5],mat(0x676c64),false);seam.position.x=0;}
-// road center broken markings
-for(let i=0;i<13;i++)box(scene,'lane dash',[.12,.015,1.5],[0,.014,-i*8-2],mat(0x99937a),false);
+// A broad, walkable county map: the outpost road runs through several ruined districts.
+const ground= new THREE.Mesh(new THREE.PlaneGeometry(420,420),mat(0x343b37));ground.rotation.x=-Math.PI/2;ground.position.y=-.04;ground.receiveShadow=true;scene.add(ground);
+const road= new THREE.Mesh(new THREE.PlaneGeometry(8,360),mat(0x454b46));road.rotation.x=-Math.PI/2;road.position.set(0,.002,-92);scene.add(road);
+for(let i=0;i<52;i++)box(scene,'road seam',[.04,.012,.09],[0,.008,42-i*5],mat(0x676c64),false);
+for(let i=0;i<31;i++)box(scene,'lane dash',[.12,.015,1.5],[0,.014,38-i*9],mat(0x99937a),false);
+for(const z of [-58,-148]){const crossing=new THREE.Mesh(new THREE.PlaneGeometry(210,6),mat(0x414844));crossing.rotation.x=-Math.PI/2;crossing.position.set(0,.003,z);scene.add(crossing);for(let x=-100;x<105;x+=9)box(scene,'crossroad dash',[1.5,.015,.12],[x,.014,z],mat(0x888d7e),false);}
 // distant blockout silhouettes
 for(const [x,z,w,h,d,c] of [[-20,-30,13,16,14,0x535b51],[19,-37,17,20,19,0x434d48],[-31,-58,17,23,19,0x48524d],[31,-62,21,19,15,0x53564d],[-12,-82,22,25,18,0x4a514b],[12,-93,25,30,18,0x464d48]]){
  const b=box(scene,'warehouse',[w,h,d],[x,h/2-0.1,z],mat(c),true);b.castShadow=true;
@@ -59,11 +59,24 @@ for(const [x,z] of [[-5,-7],[6,-24],[-14,-42],[11,-48]]){
  const barrel=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,1.2,12),mat(0x55574d,.55,.3));barrel.position.set(x,.6,z);barrel.castShadow=true;scene.add(barrel);
  box(scene,'barrel band',[.87,.09,.87],[x,.43,z],steel,false);
 }
-// scattered weeds and debris
-for(let i=0;i<90;i++){
- const x=(Math.random()-.5)*70,z=-Math.random()*90;
- if(Math.abs(x)<4)continue;
+// Scattered weeds, abandoned homesteads and tree lines make the county explorable beyond the yard.
+for(let i=0;i<650;i++){
+ const x=(Math.random()-.5)*350,z=70-Math.random()*260;
+ if(Math.abs(x)<5&&z>-200)continue;
  const weed=new THREE.Mesh(new THREE.ConeGeometry(.035+Math.random()*.05,.2+Math.random()*.45,3),mat(i%2?0x52604a:0x626246));weed.position.set(x,.12,z);weed.rotation.z=(Math.random()-.5)*.8;scene.add(weed);
+}
+for(let i=0;i<32;i++){
+ const side=Math.random()<.5?-1:1,x=side*(28+Math.random()*125),z=58-Math.random()*245,w=7+Math.random()*10,h=4+Math.random()*9,d=7+Math.random()*11;
+ const shell=box(scene,'abandoned building',[w,h,d],[x,h/2,z],mat([0x4b514a,0x535147,0x484e4a,0x5c5145][i%4]),true);shell.rotation.y=(Math.random()-.5)*.2;
+ box(scene,'dark doorway',[1.25,2.4,.08],[x+(Math.random()-.5)*w*.45,1.2,z+d/2+.05],mat(0x252b27),false);
+ for(let n=0;n<2;n++)box(scene,'broken window',[1.1,.12,.08],[x+(n?1:-1)*w*.25,2.4+Math.random()*2,z+d/2+.06],mat(0x252d29),false);
+ if(i%3===0){const roof=box(scene,'collapsed roof',[w*1.08,.22,d*.72],[x,h+.1,z],mat(0x383e39));roof.rotation.z=(Math.random()-.5)*.22;}
+}
+for(let i=0;i<115;i++){
+ const side=Math.random()<.5?-1:1,x=side*(22+Math.random()*155),z=65-Math.random()*255,height=3+Math.random()*5;
+ const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.13,.25,height*.42,6),mat(0x443c30));trunk.position.set(x,height*.21,z);trunk.castShadow=true;scene.add(trunk);
+ const crown=new THREE.Mesh(new THREE.ConeGeometry(1.05+Math.random()*1.1,height*.72,7),mat(i%3?0x39463b:0x4b5541));crown.position.set(x,height*.68,z);crown.castShadow=true;scene.add(crown);
+ if(i%4===0){const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(.45+Math.random()*.65,0),mat(0x55594f));rock.position.set(x+side*1.5,.4,z+2);rock.scale.y=.7;rock.castShadow=true;scene.add(rock);}
 }
 // overhead lamps in the yard
 for(const [x,z] of [[-8,-15],[8,-32],[-8,-52]]){
@@ -146,9 +159,9 @@ function makeZombie(x,z){
     const knee=new THREE.Mesh(new THREE.BoxGeometry(.2,.12,.08),mat(0x555548));knee.position.set(0,-.39,.12);leg.add(knee);knee.userData.zone='body';limbs.push({mesh:leg,phase:side*Math.PI,leg:true});
   }
   const torn=new THREE.Mesh(new THREE.ConeGeometry(.1,.24,5),blood);torn.position.set(-.2,.98,.17);torn.rotation.z=.4;core.add(torn);
-  const hp=2+Math.floor(wave*.25),zombie={root,core,limbs,health:hp,maxHealth:hp,alive:true,attack:Math.random()*.6,groan:2+Math.random()*5,walk:Math.random()*6,body,head};zombies.push(zombie);return zombie;
+  const hp=2+Math.floor(day*.25),zombie={root,core,limbs,health:hp,maxHealth:hp,alive:true,attack:Math.random()*.6,groan:2+Math.random()*5,walk:Math.random()*6,body,head};zombies.push(zombie);return zombie;
 }
-let gameStarted=false,gameOver=false,aiming=false, firing=false, reloading=false, kills=0, wave=0, waveTotal=0, spawned=0, nextSpawn=0, wavePause=0, raidSeconds=0, health=100, stamina=100, hitCooldown=0, shotCooldown=0, recoil=0, fireTimer=0, extractionReady=false, soundOn=false;
+let gameStarted=false,gameOver=false,aiming=false, firing=false, reloading=false, kills=0, day=1, nextSpawn=0, raidSeconds=0, health=100, stamina=100, hitCooldown=0, shotCooldown=0, recoil=0, fireTimer=0, extractionReady=false, soundOn=false;
 let bleeding=false,fractured=false,bandages=2,medkits=2,bleedTick=0,intelRecovered=0,radioUnlocked=false,audioContext=null,ambientNode=null;
 const intelItems=[];
 const ammoPools=[{mag:30,reserve:120,max:30},{mag:30,reserve:120,max:30}], weaponNames=['AK-103','MP5A3'], weaponTypes=['PS GZH','FMJ'];let weaponIndex=0;
@@ -164,6 +177,18 @@ function createIntelSites(){
   }
 }
 createIntelSites();
+const supplySites=[];
+function createSupplySites(){
+  for(const [x,z] of [[-13,-17],[16,-44],[-24,-72],[34,-101],[-48,-126],[55,-158],[92,-38],[-106,-181]]){
+    const group=new THREE.Group();group.position.set(x,0,z);scene.add(group);
+    const crate=box(group,'field supply crate',[.72,.52,.56],[0,.32,0],mat(0x59604a));
+    box(group,'supply lid',[.76,.08,.6],[0,.62,0],mat(0x777455));
+    for(const side of [-1,1])box(group,'crate strap',[.07,.56,.59],[side*.22,.33,0],steel,false);
+    const marker=new THREE.Mesh(new THREE.TorusGeometry(.58,.035,6,20),new THREE.MeshBasicMaterial({color:0x79d6b2}));marker.rotation.x=Math.PI/2;marker.position.y=.045;group.add(marker);
+    supplySites.push({group,x,z,looted:false});
+  }
+}
+createSupplySites();
 const extractionPad=new THREE.Group();extractionPad.position.set(0,.015,7);scene.add(extractionPad);const extractionRing=new THREE.Mesh(new THREE.TorusGeometry(2.4,.09,8,36),new THREE.MeshBasicMaterial({color:0xf0a25d,transparent:true,opacity:.8}));extractionRing.rotation.x=Math.PI/2;extractionPad.add(extractionRing);const extractionCore=new THREE.Mesh(new THREE.CircleGeometry(2.1,36),new THREE.MeshBasicMaterial({color:0x9b5932,transparent:true,opacity:.12,side:THREE.DoubleSide}));extractionCore.rotation.x=-Math.PI/2;extractionCore.position.y=-.01;extractionPad.add(extractionCore);
 function initAudio(){if(!audioContext){const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return;audioContext=new Ctx();const length=audioContext.sampleRate*2,buffer=audioContext.createBuffer(1,length,audioContext.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<length;i++)data[i]=(Math.random()*2-1)*.12;ambientNode=audioContext.createBufferSource();ambientNode.buffer=buffer;ambientNode.loop=true;const filter=audioContext.createBiquadFilter();filter.type='lowpass';filter.frequency.value=320;const gain=audioContext.createGain();gain.gain.value=.035;ambientNode.connect(filter).connect(gain).connect(audioContext.destination);ambientNode.start();ambientNode._gain=gain;}audioContext.resume?.();}
 function playSfx(kind){if(!soundOn)return;initAudio();if(!audioContext)return;const now=audioContext.currentTime,osc=audioContext.createOscillator(),gain=audioContext.createGain(),filter=audioContext.createBiquadFilter();filter.type='lowpass';osc.connect(filter).connect(gain).connect(audioContext.destination);const sounds={shot:[105,48,.12,'sawtooth'],hit:[180,70,.09,'triangle'],reload:[430,260,.12,'square'],heal:[610,880,.22,'sine'],pickup:[520,960,.3,'sine'],groan:[88,54,.36,'sawtooth']};const [from,to,duration,type]=sounds[kind]||sounds.hit;osc.type=type;osc.frequency.setValueAtTime(from,now);osc.frequency.exponentialRampToValueAtTime(Math.max(20,to),now+duration);filter.frequency.value=kind==='shot'?700:1400;gain.gain.setValueAtTime(kind==='shot'?.13:.055,now);gain.gain.exponentialRampToValueAtTime(.001,now+duration);osc.start(now);osc.stop(now+duration);}
@@ -176,13 +201,22 @@ const player={position:camera.position, speed:4.5};
 function isMobile(){return matchMedia('(pointer:coarse)').matches||window.innerWidth<760;}
 function resize(){const w=window.innerWidth,h=window.innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();camera.fov=aiming?48:72;camera.updateProjectionMatrix();}
 window.addEventListener('resize',resize);resize();
-function updateHUD(){const pool=ammoPools[weaponIndex];$('ammo').textContent=String(pool.mag).padStart(2,'0');$('reserve').textContent=pool.reserve;$('weaponName').textContent=weaponNames[weaponIndex];$('ammoType').textContent=weaponTypes[weaponIndex];$('healthNum').textContent=Math.ceil(health);$('healthBar').style.width=`${health}%`;$('stamina').textContent=Math.round(stamina);$('threatCount').textContent=zombies.filter(z=>z.alive).length;$('waveProgress').style.width=waveTotal?`${Math.min(100,spawned/waveTotal*100)}%`:'0%';$('fireMode').innerHTML=weaponIndex===0?'AUTO <span>▾</span>':'SEMI <span>▾</span>';const bleed=$('bleedStatus');bleed.textContent=bleeding?'YES':'NO';bleed.className=bleeding?'bad':'good';$('injuryStatus').textContent=fractured?'FRACTURE':'STABLE';$('injuryStatus').className=fractured?'bad':'good';$('bandageCount').textContent=bandages;$('medkitCount').textContent=medkits;$('intelCount').textContent=`${intelRecovered}/3`;updateObjectives();}
-function updateObjectives(){const set=(id,done)=>{const row=$(id);row.classList.toggle('done',done);row.querySelector('i').textContent=done?'✓':'□';};const cleared=wave>=3&&spawned===waveTotal&&!zombies.some(z=>z.alive);set('intelObjective',intelRecovered>=3);set('clearObjective',cleared);set('extractObjective',gameOver&&extractionReady);$('objectiveHint').textContent=extractionReady?(atExtraction()?'Extraction ready — press E to leave':'All objectives complete — return to insertion'):intelRecovered<3?'Press E near marked intel':cleared?'All waves clear — return to insertion':'Clear all 3 hostile waves';}
+function updateHUD(){const pool=ammoPools[weaponIndex];$('ammo').textContent=String(pool.mag).padStart(2,'0');$('reserve').textContent=pool.reserve;$('weaponName').textContent=weaponNames[weaponIndex];$('ammoType').textContent=weaponTypes[weaponIndex];$('healthNum').textContent=Math.ceil(health);$('healthBar').style.width=`${health}%`;$('stamina').textContent=Math.round(stamina);$('threatCount').textContent=zombies.filter(z=>z.alive).length;$('supplyProgress').style.width=`${(supplySites.filter(s=>s.looted).length/supplySites.length)*100}%`;$('fireMode').innerHTML=weaponIndex===0?'AUTO <span>▾</span>':'SEMI <span>▾</span>';const bleed=$('bleedStatus');bleed.textContent=bleeding?'YES':'NO';bleed.className=bleeding?'bad':'good';$('injuryStatus').textContent=fractured?'FRACTURE':'STABLE';$('injuryStatus').className=fractured?'bad':'good';$('bandageCount').textContent=bandages;$('medkitCount').textContent=medkits;$('intelCount').textContent=`${intelRecovered}/3`;updateObjectives();}
+function updateObjectives(){const set=(id,done)=>{const row=$(id);row.classList.toggle('done',done);row.querySelector('i').textContent=done?'✓':'□';};const endured=raidSeconds>=180;set('intelObjective',intelRecovered>=3);set('clearObjective',endured);set('extractObjective',gameOver&&extractionReady&&health>0);$('objectiveHint').textContent=extractionReady?(atExtraction()?'Extraction ready — press E to leave':'Objectives complete — return to the insertion point'):intelRecovered<3?'Explore and press E at glowing intel caches':endured?'Return to the insertion point to extract':'Scavenge, survive, and watch your six';}
 function showToast(message){const el=$('toast');el.textContent=message;el.classList.add('show');clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>el.classList.remove('show'),2100);}
-function updateWaveUI(){ $('waveLabel').textContent=`WAVE ${String(wave).padStart(2,'0')}`;$('waveSub').textContent=wave===0?'CONTACT IMMINENT':`HOSTILES ${spawned}/${waveTotal}`; }
-function beginWave(){wave++;waveTotal=4+wave*2;spawned=0;nextSpawn=.5;wavePause=0;updateWaveUI();showToast(`WAVE ${String(wave).padStart(2,'0')} — CONTACT`);}
-function spawnEnemy(){const side=Math.random()<.5?-1:1;let x,z;if(Math.random()<.72){x=side*(8+Math.random()*12);z=-8-Math.random()*48;}else{x=(Math.random()-.5)*32;z=-24-Math.random()*38;}makeZombie(x,z);spawned++;updateWaveUI();}
-function startGame(){if(gameStarted&&!gameOver)return;gameStarted=true;gameOver=false;health=100;stamina=100;kills=0;wave=0;spawned=0;waveTotal=0;wavePause=0;raidSeconds=0;extractionReady=false;bleeding=false;fractured=false;bleedTick=0;bandages=2;medkits=2;intelRecovered=0;reloading=false;firing=false;aiming=false;shotCooldown=0;fireTimer=0;camera.position.set(0,1.65,8);yaw=0;pitch=0;for(const key in keys)keys[key]=false;for(const item of intelItems){item.recovered=false;item.group.visible=true;}zombies.splice(0).forEach(z=>scene.remove(z.root));ammoPools[0]={mag:30,reserve:120,max:30};ammoPools[1]={mag:30,reserve:120,max:30};weaponIndex=0;buildWeapon(0);$('killFeed').replaceChildren();$('reloadIndicator').classList.remove('loading');$('reloadToast').classList.remove('show');$('startOverlay').style.display='none';$('endOverlay').classList.add('hidden');$('extractText').textContent='HOLD POSITION';$('objective').textContent='RECOVER INTEL / CLEAR AREA';$('controlsHint').style.display=isMobile()?'none':'block';if(soundOn)initAudio();if(!isMobile())canvas.requestPointerLock?.();beginWave();updateHUD();clock.getDelta();}
+function updateSurvivalUI(){ $('dayLabel').textContent=`DAY ${String(day).padStart(2,'0')}`;$('daySub').textContent=`${supplySites.filter(s=>!s.looted).length} SUPPLY CACHES LEFT`; }
+function spawnEnemy(){
+  let x=0,z=0;
+  for(let attempt=0;attempt<8;attempt++){
+    const angle=Math.random()*Math.PI*2,dist=28+Math.random()*18;
+    x=camera.position.x+Math.sin(angle)*dist;
+    z=camera.position.z-Math.cos(angle)*dist;
+    if(Math.abs(x)<202&&Math.abs(z)<202)break;
+  }
+  x=THREE.MathUtils.clamp(x,-202,202);z=THREE.MathUtils.clamp(z,-202,202);
+  makeZombie(x,z);
+}
+function startGame(){if(gameStarted&&!gameOver)return;gameStarted=true;gameOver=false;health=100;stamina=100;kills=0;day=1;nextSpawn=3;raidSeconds=0;extractionReady=false;bleeding=false;fractured=false;bleedTick=0;bandages=2;medkits=2;intelRecovered=0;reloading=false;firing=false;aiming=false;shotCooldown=0;fireTimer=0;camera.position.set(0,1.65,8);yaw=0;pitch=0;for(const key in keys)keys[key]=false;for(const item of intelItems){item.recovered=false;item.group.visible=true;}for(const site of supplySites){site.looted=false;site.group.visible=true;}zombies.splice(0).forEach(z=>scene.remove(z.root));ammoPools[0]={mag:30,reserve:120,max:30};ammoPools[1]={mag:30,reserve:120,max:30};weaponIndex=0;buildWeapon(0);$('killFeed').replaceChildren();$('reloadIndicator').classList.remove('loading');$('reloadToast').classList.remove('show');$('startOverlay').style.display='none';$('endOverlay').classList.add('hidden');$('extractText').textContent='HOLD POSITION';$('objective').textContent='SCAVENGE / SURVIVE / EXTRACT';$('controlsHint').style.display=isMobile()?'none':'block';if(soundOn)initAudio();if(!isMobile())canvas.requestPointerLock?.();updateSurvivalUI();updateHUD();clock.getDelta();}
 $('startBtn').addEventListener('click',startGame);$('restartBtn').addEventListener('click',startGame);
 canvas.addEventListener('click',()=>{if(gameStarted&&!gameOver&&!isMobile()&&document.pointerLockElement!==canvas)canvas.requestPointerLock?.();});
 document.addEventListener('mousemove',e=>{if(document.pointerLockElement===canvas&&gameStarted){yaw-=e.movementX*.0022;pitch-=e.movementY*.0022;pitch=THREE.MathUtils.clamp(pitch,-1.25,1.25);}});
@@ -194,8 +228,21 @@ document.addEventListener('contextmenu',e=>e.preventDefault());
 function useBandage(){if(!gameStarted||gameOver)return;if(bandages<=0){showToast('NO BANDAGES LEFT');return;}if(!bleeding){showToast('NO ACTIVE BLEED');return;}bandages--;bleeding=false;playSfx('heal');showToast('BLEEDING STOPPED — BANDAGE APPLIED');updateHUD();}
 function useMedkit(){if(!gameStarted||gameOver)return;if(medkits<=0){showToast('NO IFAK LEFT');return;}if(health>=100&&!fractured){showToast('NO TREATMENT NEEDED');return;}medkits--;health=Math.min(100,health+45);fractured=false;playSfx('heal');showToast('IFAK APPLIED — CONDITION STABILIZED');updateHUD();}
 function atExtraction(){return Math.hypot(camera.position.x,camera.position.z-7)<3.5;}
-function checkExtraction(){const wavesCleared=wave>=3&&spawned===waveTotal&&!zombies.some(z=>z.alive);if(wavesCleared&&intelRecovered>=3&&!extractionReady){extractionReady=true;$('extractText').textContent=atExtraction()?'PRESS E TO EXTRACT':'RETURN TO INSERTION';$('objective').textContent='EXTRACTION AVAILABLE';showToast('OBJECTIVES COMPLETE — RETURN TO INSERTION');}else if(wavesCleared&&intelRecovered<3){$('objective').textContent='RECOVER REMAINING FIELD INTEL';}updateHUD();}
-function interact(){if(!gameStarted||gameOver)return;let nearest=null,dist=Infinity;for(const item of intelItems){if(item.recovered)continue;const d=Math.hypot(camera.position.x-item.x,camera.position.z-item.z);if(d<dist){dist=d;nearest=item;}}if(nearest&&dist<2.8){nearest.recovered=true;nearest.group.visible=false;intelRecovered++;playSfx('pickup');showToast(`FIELD INTEL RECOVERED — ${intelRecovered}/3`);checkExtraction();updateHUD();return;}if(extractionReady){if(atExtraction())extract();else showToast('RETURN TO INSERTION POINT');return;}showToast(nearest&&dist<8?'MOVE CLOSER TO THE INTEL CACHE':'NO INTERACTION IN RANGE');}
+function checkExtraction(){const ready=raidSeconds>=180&&intelRecovered>=3;if(ready&&!extractionReady){extractionReady=true;$('extractText').textContent=atExtraction()?'PRESS E TO EXTRACT':'RETURN TO INSERTION';$('objective').textContent='EXTRACTION AVAILABLE';showToast('SURVIVAL MILESTONE REACHED — EXTRACTION OPEN');}updateHUD();}
+function interact(){
+ if(!gameStarted||gameOver)return;
+ let nearest=null,dist=Infinity,kind='intel';
+ for(const item of intelItems){if(item.recovered)continue;const d=Math.hypot(camera.position.x-item.x,camera.position.z-item.z);if(d<dist){dist=d;nearest=item;kind='intel';}}
+ for(const site of supplySites){if(site.looted)continue;const d=Math.hypot(camera.position.x-site.x,camera.position.z-site.z);if(d<dist){dist=d;nearest=site;kind='supply';}}
+ if(nearest&&dist<2.8){
+  nearest.group.visible=false;playSfx('pickup');
+  if(kind==='intel'){nearest.recovered=true;intelRecovered++;showToast(`FIELD INTEL RECOVERED — ${intelRecovered}/3`);}
+  else{nearest.looted=true;const reward=Math.floor(Math.random()*3);if(reward===0){ammoPools[0].reserve+=30;ammoPools[1].reserve+=24;showToast('SCAVENGED: RIFLE AMMUNITION');}else if(reward===1){bandages++;showToast('SCAVENGED: BANDAGES');}else{medkits++;showToast('SCAVENGED: IFAK MEDICAL KIT');}}
+  updateSurvivalUI();checkExtraction();updateHUD();return;
+ }
+ if(extractionReady){if(atExtraction())extract();else showToast('RETURN TO INSERTION POINT');return;}
+ showToast(nearest&&dist<8?`MOVE CLOSER TO THE ${kind==='intel'?'INTEL CACHE':'SUPPLY CRATE'}`:'NO INTERACTION IN RANGE');
+}
 function switchWeapon(index){if(index===weaponIndex)return;weaponIndex=index;buildWeapon(index);updateHUD();showToast(`LOADOUT: ${weaponNames[index]}`);}
 function reload(){if(!gameStarted||reloading)return;const p=ammoPools[weaponIndex];if(p.mag>=p.max||p.reserve<=0){showToast(p.reserve<=0?'NO RESERVE AMMO':'MAGAZINE FULL');return;}reloading=true;firing=false;playSfx('reload');$('reloadIndicator').classList.add('loading');$('reloadToast').classList.add('show');const duration=weaponIndex===0?1650:1350;setTimeout(()=>{if(!gameStarted||gameOver){reloading=false;return;}const take=Math.min(p.max-p.mag,p.reserve);p.mag+=take;p.reserve-=take;reloading=false;$('reloadIndicator').classList.remove('loading');$('reloadToast').classList.remove('show');updateHUD();},duration);}
 $('reloadBtn').addEventListener('pointerdown',e=>{e.preventDefault();reload();});$('swapBtn').addEventListener('pointerdown',e=>{e.preventDefault();switchWeapon(1-weaponIndex);});$('bandageBtn').addEventListener('click',useBandage);$('medkitBtn').addEventListener('click',useMedkit);
@@ -247,17 +294,24 @@ function update(dt){
   const len=Math.hypot(forward,strafe)||1;
   camera.position.x+=(Math.sin(yaw)*forward+Math.cos(yaw)*strafe)/len*speed*dt;
   camera.position.z+=(-Math.cos(yaw)*forward+Math.sin(yaw)*strafe)/len*speed*dt;
-  camera.position.x=THREE.MathUtils.clamp(camera.position.x,-32,32);camera.position.z=THREE.MathUtils.clamp(camera.position.z,-102,12);
+  camera.position.x=THREE.MathUtils.clamp(camera.position.x,-205,205);camera.position.z=THREE.MathUtils.clamp(camera.position.z,-205,205);
   camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);
   if(firing){fireTimer+=dt;if(fireTimer>.12){fireTimer=0;shoot();}}else fireTimer=0;
-  nextSpawn-=dt;
-  if(spawned<waveTotal&&nextSpawn<=0){spawnEnemy();nextSpawn=Math.max(.6,1.42-wave*.12+Math.random()*.65);}
+  const currentDay=1+Math.floor(raidSeconds/120);
+   if(currentDay!==day){day=currentDay;updateSurvivalUI();showToast(`DAY ${String(day).padStart(2,'0')} — STAY ALERT`);}
+   nextSpawn-=dt;
+  const livingCount=zombies.reduce((count,z)=>count+(z.alive?1:0),0);
+   if(nextSpawn<=0){
+    if(livingCount<9)spawnEnemy();
+    const pressure=Math.min(1,raidSeconds/180);
+    nextSpawn=8.2-pressure*2.4+Math.random()*1.8;
+   }
   for(const z of zombies){if(!z.alive)continue;const dx=camera.position.x-z.root.position.x,dz=camera.position.z-z.root.position.z,dist=Math.hypot(dx,dz);z.walk+=dt*7;z.groan-=dt;if(z.groan<=0&&dist<28){playSfx('groan');z.groan=5+Math.random()*6;}
-   if(dist>1.45){const pace=wave>2?1.12:1;z.root.position.x+=dx/(dist||1)*pace*dt;z.root.position.z+=dz/(dist||1)*pace*dt;z.root.rotation.y=Math.atan2(dx,dz);z.core.position.y=Math.abs(Math.sin(z.walk))*.035;for(const l of z.limbs)l.mesh.rotation.x=Math.sin(z.walk+l.phase)*(l.leg?.5:.48)+(l.leg?0:-.42);}
-   else{z.attack-=dt;if(z.attack<=0){damagePlayer(7+Math.min(wave,4));z.attack=1.05;}}
+   if(dist>1.45){const pace=1+Math.min(day-1,4)*.045;z.root.position.x+=dx/(dist||1)*pace*dt;z.root.position.z+=dz/(dist||1)*pace*dt;z.root.rotation.y=Math.atan2(dx,dz);z.core.position.y=Math.abs(Math.sin(z.walk))*.035;for(const l of z.limbs)l.mesh.rotation.x=Math.sin(z.walk+l.phase)*(l.leg?.5:.48)+(l.leg?0:-.42);}
+   else{z.attack-=dt;if(z.attack<=0){damagePlayer(7+Math.min(day,4));z.attack=1.05;}}
   }
   const living=zombies.some(z=>z.alive);
-  if(spawned===waveTotal&&!living){if(wave<3){if(wavePause===0){wavePause=3.5;showToast('AREA CLEAR — NEXT WAVE INCOMING');}else{wavePause-=dt;if(wavePause<=0){wavePause=-1;beginWave();}}}else checkExtraction();}
+  if(!extractionReady&&raidSeconds>=180&&intelRecovered>=3)checkExtraction();
   if(extractionReady)$('extractText').textContent=atExtraction()?'PRESS E TO EXTRACT':'RETURN TO INSERTION';
   if(reloading){/* visual state is driven by the magazine timer */}
   updateHUD();
