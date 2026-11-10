@@ -117,36 +117,57 @@ function buildWeapon(type){while(weaponRoot.children.length)weaponRoot.remove(we
 buildWeapon(0);
 const muzzleFlash=new THREE.PointLight(0xffc15e,0,3,2);weaponRoot.add(muzzleFlash);muzzleFlash.position.set(.28,-.31,-2.1);
 
-// Procedural animated infected, with separate head/body hit zones.
+// Procedural infected with layered clothing, rounded anatomy and separate hit zones.
 const zombies=[];
 function makeZombie(x,z){
- const root=new THREE.Group();root.position.set(x,0,z);scene.add(root);
- const core=new THREE.Group();root.add(core);
- const body= new THREE.Mesh(new THREE.BoxGeometry(.62,.85,.34),shirt);body.position.y=1.12;body.castShadow=true;core.add(body);body.userData.zone='body';
- const chest=new THREE.Mesh(new THREE.BoxGeometry(.64,.31,.36),rotten);chest.position.set(0,1.37,.015);chest.castShadow=true;core.add(chest);chest.userData.zone='body';
- const head=new THREE.Mesh(new THREE.SphereGeometry(.24,10,8),zombieSkin);head.scale.set(.82,1.1,.85);head.position.set(0,1.78,-.01);head.castShadow=true;core.add(head);head.userData.zone='head';
- const jaw=new THREE.Mesh(new THREE.BoxGeometry(.24,.08,.2),blood);jaw.position.set(0,1.62,.12);core.add(jaw);jaw.userData.zone='head';
- const eyeMat=new THREE.MeshBasicMaterial({color:0xb73e25});for(const ex of [-.09,.09]){const eye=new THREE.Mesh(new THREE.SphereGeometry(.027,6,5),eyeMat);eye.position.set(ex,1.8,.19);core.add(eye);eye.userData.zone='head';}
- const limbs=[];
- for(const side of [-1,1]){
-  const arm=new THREE.Group();arm.position.set(side*.39,1.37,0);core.add(arm);
-  const upper=new THREE.Mesh(new THREE.BoxGeometry(.2,.48,.22),side<0?shirt:rotten);upper.position.y=-.22;upper.castShadow=true;arm.add(upper);upper.userData.zone='body';
-  const fore=new THREE.Mesh(new THREE.BoxGeometry(.16,.42,.17),zombieSkin);fore.position.set(side*.03,-.57,.04);fore.rotation.z=side*-.15;fore.castShadow=true;arm.add(fore);fore.userData.zone='body';
-  const hand=new THREE.Mesh(new THREE.BoxGeometry(.18,.16,.17),zombieSkin);hand.position.set(side*.04,-.83,.07);arm.add(hand);hand.userData.zone='body';
-  limbs.push({mesh:arm,phase:side*Math.PI});
-  const leg=new THREE.Group();leg.position.set(side*.17,.72,0);core.add(leg);
-  const thigh=new THREE.Mesh(new THREE.BoxGeometry(.24,.48,.27),darkConcrete);thigh.position.y=-.22;thigh.castShadow=true;leg.add(thigh);thigh.userData.zone='body';
-  const shin=new THREE.Mesh(new THREE.BoxGeometry(.19,.42,.2),zombieSkin);shin.position.set(0,-.62,.035);shin.castShadow=true;leg.add(shin);shin.userData.zone='body';
-  const foot=new THREE.Mesh(new THREE.BoxGeometry(.24,.13,.38),rubber);foot.position.set(0,-.87,.09);leg.add(foot);foot.userData.zone='body';
-  limbs.push({mesh:leg,phase:side*Math.PI,leg:true});
- }
- // dangling scraps
- const rag=new THREE.Mesh(new THREE.BoxGeometry(.14,.28,.05),blood);rag.position.set(-.18,1.07,.2);rag.rotation.z=-.2;core.add(rag);
- const health=2+Math.floor(wave*.25);
- const zombie={root,core,limbs,health,maxHealth:health,alive:true,attack:Math.random()*.6,walk:Math.random()*6,body,head};zombies.push(zombie);return zombie;
+  const root=new THREE.Group();root.position.set(x,0,z);scene.add(root);
+  const core=new THREE.Group();root.add(core);
+  const tops=[shirt,mat(0x535347),mat(0x4a514f),mat(0x665144)], skins=[zombieSkin,mat(0x777663),mat(0x5d695c)];
+  const top=tops[Math.floor(Math.random()*tops.length)], skin=skins[Math.floor(Math.random()*skins.length)];
+  const capsule=(name,radius,length,pos,material,zone='body',parent=core)=>{const m=new THREE.Mesh(new THREE.CapsuleGeometry(radius,length,4,8),material);m.name=name;m.position.set(...pos);m.castShadow=true;m.receiveShadow=true;m.userData.zone=zone;parent.add(m);return m;};
+  const body=capsule('torso',.3,.48,[0,1.15,0],top);
+  const vest=new THREE.Mesh(new THREE.BoxGeometry(.49,.53,.27),mat(0x343b34));vest.position.set(0,1.19,.13);vest.castShadow=true;core.add(vest);vest.userData.zone='body';
+  for(const side of [-1,1]){const strap=new THREE.Mesh(new THREE.BoxGeometry(.065,.61,.055),mat(0x77745e));strap.position.set(side*.17,1.2,.275);strap.rotation.z=side*-.18;core.add(strap);strap.userData.zone='body';const pouch=new THREE.Mesh(new THREE.BoxGeometry(.14,.17,.1),mat(0x555744));pouch.position.set(side*.19,.99,.3);core.add(pouch);pouch.userData.zone='body';}
+  const collar=new THREE.Mesh(new THREE.CylinderGeometry(.13,.17,.14,8),mat(0x4a4b41));collar.position.y=1.5;core.add(collar);collar.userData.zone='body';
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.235,16,12),skin);head.scale.set(.9,1.12,.92);head.position.set(0,1.78,-.015);head.castShadow=true;core.add(head);head.userData.zone='head';
+  const jaw=new THREE.Mesh(new THREE.CapsuleGeometry(.085,.12,3,7),blood);jaw.scale.set(1,.58,.7);jaw.position.set(0,1.62,.14);core.add(jaw);jaw.userData.zone='head';
+  const nose=new THREE.Mesh(new THREE.SphereGeometry(.055,8,6),skin);nose.scale.set(.7,1,.65);nose.position.set(0,1.75,.205);core.add(nose);nose.userData.zone='head';
+  const eyeMat=new THREE.MeshBasicMaterial({color:0xd05632});for(const ex of [-.095,.095]){const eye=new THREE.Mesh(new THREE.SphereGeometry(.027,8,6),eyeMat);eye.position.set(ex,1.81,.195);core.add(eye);eye.userData.zone='head';}
+  const hair=new THREE.Mesh(new THREE.SphereGeometry(.19,10,6,0,Math.PI*2,0,Math.PI*.42),mat(0x252a25));hair.position.set(0,1.91,-.025);core.add(hair);hair.userData.zone='head';
+  const limbs=[];
+  for(const side of [-1,1]){
+    const arm=new THREE.Group();arm.position.set(side*.36,1.38,0);core.add(arm);
+    capsule('upper arm',.105,.28,[0,-.2,0],top,'body',arm);
+    const fore=capsule('forearm',.075,.28,[side*.02,-.48,.055],skin,'body',arm);fore.rotation.z=side*-.12;
+    const hand=new THREE.Mesh(new THREE.SphereGeometry(.09,8,6),skin);hand.position.set(side*.04,-.7,.08);arm.add(hand);hand.userData.zone='body';limbs.push({mesh:arm,phase:side*Math.PI});
+    const leg=new THREE.Group();leg.position.set(side*.16,.73,0);core.add(leg);
+    capsule('thigh',.13,.3,[0,-.2,0],darkConcrete,'body',leg);capsule('shin',.085,.27,[0,-.51,.035],skin,'body',leg);
+    const boot=new THREE.Mesh(new THREE.BoxGeometry(.22,.14,.34),rubber);boot.position.set(0,-.73,.11);boot.castShadow=true;leg.add(boot);boot.userData.zone='body';
+    const knee=new THREE.Mesh(new THREE.BoxGeometry(.2,.12,.08),mat(0x555548));knee.position.set(0,-.39,.12);leg.add(knee);knee.userData.zone='body';limbs.push({mesh:leg,phase:side*Math.PI,leg:true});
+  }
+  const torn=new THREE.Mesh(new THREE.ConeGeometry(.1,.24,5),blood);torn.position.set(-.2,.98,.17);torn.rotation.z=.4;core.add(torn);
+  const hp=2+Math.floor(wave*.25),zombie={root,core,limbs,health:hp,maxHealth:hp,alive:true,attack:Math.random()*.6,groan:2+Math.random()*5,walk:Math.random()*6,body,head};zombies.push(zombie);return zombie;
 }
 let gameStarted=false,gameOver=false,aiming=false, firing=false, reloading=false, kills=0, wave=0, waveTotal=0, spawned=0, nextSpawn=0, wavePause=0, raidSeconds=0, health=100, stamina=100, hitCooldown=0, shotCooldown=0, recoil=0, fireTimer=0, extractionReady=false, soundOn=false;
+let bleeding=false,fractured=false,bandages=2,medkits=2,bleedTick=0,intelRecovered=0,radioUnlocked=false,audioContext=null,ambientNode=null;
+const intelItems=[];
 const ammoPools=[{mag:30,reserve:120,max:30},{mag:30,reserve:120,max:30}], weaponNames=['AK-103','MP5A3'], weaponTypes=['PS GZH','FMJ'];let weaponIndex=0;
+function createIntelSites(){
+  for(const [x,z] of [[0,-11],[-10,-31],[10,-50]]){
+    const group=new THREE.Group();group.position.set(x,0,z);scene.add(group);
+    const beam=new THREE.Mesh(new THREE.CylinderGeometry(.035,.18,2.4,8,1,true),new THREE.MeshBasicMaterial({color:0xd8f36a,transparent:true,opacity:.18,depthWrite:false}));beam.position.y=1.2;group.add(beam);
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(.48,.035,6,24),new THREE.MeshBasicMaterial({color:0xd8f36a}));ring.rotation.x=Math.PI/2;ring.position.y=.08;group.add(ring);
+    const caseMesh=new THREE.Mesh(new THREE.BoxGeometry(.48,.12,.34),mat(0x42483b));caseMesh.position.y=.1;caseMesh.castShadow=true;group.add(caseMesh);
+    const page=new THREE.Mesh(new THREE.BoxGeometry(.25,.025,.17),new THREE.MeshStandardMaterial({color:0xd8d2b7,emissive:0x57533b}));page.position.set(0,.18,0);group.add(page);
+    const light=new THREE.PointLight(0xd8f36a,4,5,2);light.position.y=.7;group.add(light);
+    intelItems.push({group,x,z,recovered:false});
+  }
+}
+createIntelSites();
+const extractionPad=new THREE.Group();extractionPad.position.set(0,.015,7);scene.add(extractionPad);const extractionRing=new THREE.Mesh(new THREE.TorusGeometry(2.4,.09,8,36),new THREE.MeshBasicMaterial({color:0xf0a25d,transparent:true,opacity:.8}));extractionRing.rotation.x=Math.PI/2;extractionPad.add(extractionRing);const extractionCore=new THREE.Mesh(new THREE.CircleGeometry(2.1,36),new THREE.MeshBasicMaterial({color:0x9b5932,transparent:true,opacity:.12,side:THREE.DoubleSide}));extractionCore.rotation.x=-Math.PI/2;extractionCore.position.y=-.01;extractionPad.add(extractionCore);
+function initAudio(){if(!audioContext){const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return;audioContext=new Ctx();const length=audioContext.sampleRate*2,buffer=audioContext.createBuffer(1,length,audioContext.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<length;i++)data[i]=(Math.random()*2-1)*.12;ambientNode=audioContext.createBufferSource();ambientNode.buffer=buffer;ambientNode.loop=true;const filter=audioContext.createBiquadFilter();filter.type='lowpass';filter.frequency.value=320;const gain=audioContext.createGain();gain.gain.value=.035;ambientNode.connect(filter).connect(gain).connect(audioContext.destination);ambientNode.start();ambientNode._gain=gain;}audioContext.resume?.();}
+function playSfx(kind){if(!soundOn)return;initAudio();if(!audioContext)return;const now=audioContext.currentTime,osc=audioContext.createOscillator(),gain=audioContext.createGain(),filter=audioContext.createBiquadFilter();filter.type='lowpass';osc.connect(filter).connect(gain).connect(audioContext.destination);const sounds={shot:[105,48,.12,'sawtooth'],hit:[180,70,.09,'triangle'],reload:[430,260,.12,'square'],heal:[610,880,.22,'sine'],pickup:[520,960,.3,'sine'],groan:[88,54,.36,'sawtooth']};const [from,to,duration,type]=sounds[kind]||sounds.hit;osc.type=type;osc.frequency.setValueAtTime(from,now);osc.frequency.exponentialRampToValueAtTime(Math.max(20,to),now+duration);filter.frequency.value=kind==='shot'?700:1400;gain.gain.setValueAtTime(kind==='shot'?.13:.055,now);gain.gain.exponentialRampToValueAtTime(.001,now+duration);osc.start(now);osc.stop(now+duration);}
+function setSound(enabled){soundOn=enabled;initAudio();if(ambientNode?._gain)ambientNode._gain.gain.setTargetAtTime(soundOn?.035:0,audioContext.currentTime,.12);$('soundToggle').style.color=soundOn?'var(--lime)':'#dfe4dc';showToast(soundOn?'AUDIO ENABLED':'AUDIO MUTED');}
 const keys={};
 const raycaster=new THREE.Raycaster();raycaster.far=85;
 const clock=new THREE.Clock();
@@ -155,26 +176,32 @@ const player={position:camera.position, speed:4.5};
 function isMobile(){return matchMedia('(pointer:coarse)').matches||window.innerWidth<760;}
 function resize(){const w=window.innerWidth,h=window.innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();camera.fov=aiming?48:72;camera.updateProjectionMatrix();}
 window.addEventListener('resize',resize);resize();
-function updateHUD(){const pool=ammoPools[weaponIndex];$('ammo').textContent=String(pool.mag).padStart(2,'0');$('reserve').textContent=pool.reserve;$('weaponName').textContent=weaponNames[weaponIndex];$('ammoType').textContent=weaponTypes[weaponIndex];$('healthNum').textContent=Math.ceil(health);$('healthBar').style.width=`${health}%`;$('stamina').textContent=Math.round(stamina);$('threatCount').textContent=zombies.filter(z=>z.alive).length;$('waveProgress').style.width=waveTotal?`${Math.min(100,spawned/waveTotal*100)}%`:'0%';$('fireMode').innerHTML=weaponIndex===0?'AUTO <span>▾</span>':'SEMI <span>▾</span>';}
+function updateHUD(){const pool=ammoPools[weaponIndex];$('ammo').textContent=String(pool.mag).padStart(2,'0');$('reserve').textContent=pool.reserve;$('weaponName').textContent=weaponNames[weaponIndex];$('ammoType').textContent=weaponTypes[weaponIndex];$('healthNum').textContent=Math.ceil(health);$('healthBar').style.width=`${health}%`;$('stamina').textContent=Math.round(stamina);$('threatCount').textContent=zombies.filter(z=>z.alive).length;$('waveProgress').style.width=waveTotal?`${Math.min(100,spawned/waveTotal*100)}%`:'0%';$('fireMode').innerHTML=weaponIndex===0?'AUTO <span>▾</span>':'SEMI <span>▾</span>';const bleed=$('bleedStatus');bleed.textContent=bleeding?'YES':'NO';bleed.className=bleeding?'bad':'good';$('injuryStatus').textContent=fractured?'FRACTURE':'STABLE';$('injuryStatus').className=fractured?'bad':'good';$('bandageCount').textContent=bandages;$('medkitCount').textContent=medkits;$('intelCount').textContent=`${intelRecovered}/3`;updateObjectives();}
+function updateObjectives(){const set=(id,done)=>{const row=$(id);row.classList.toggle('done',done);row.querySelector('i').textContent=done?'✓':'□';};const cleared=wave>=3&&spawned===waveTotal&&!zombies.some(z=>z.alive);set('intelObjective',intelRecovered>=3);set('clearObjective',cleared);set('extractObjective',gameOver&&extractionReady);$('objectiveHint').textContent=extractionReady?(atExtraction()?'Extraction ready — press E to leave':'All objectives complete — return to insertion'):intelRecovered<3?'Press E near marked intel':cleared?'All waves clear — return to insertion':'Clear all 3 hostile waves';}
 function showToast(message){const el=$('toast');el.textContent=message;el.classList.add('show');clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>el.classList.remove('show'),2100);}
 function updateWaveUI(){ $('waveLabel').textContent=`WAVE ${String(wave).padStart(2,'0')}`;$('waveSub').textContent=wave===0?'CONTACT IMMINENT':`HOSTILES ${spawned}/${waveTotal}`; }
 function beginWave(){wave++;waveTotal=4+wave*2;spawned=0;nextSpawn=.5;updateWaveUI();showToast(`WAVE ${String(wave).padStart(2,'0')} — CONTACT`);}
 function spawnEnemy(){const side=Math.random()<.5?-1:1;let x,z;if(Math.random()<.72){x=side*(8+Math.random()*12);z=-8-Math.random()*48;}else{x=(Math.random()-.5)*32;z=-24-Math.random()*38;}makeZombie(x,z);spawned++;updateWaveUI();}
-function startGame(){if(gameStarted&&!gameOver)return;gameStarted=true;gameOver=false;health=100;stamina=100;kills=0;wave=0;spawned=0;waveTotal=0;raidSeconds=0;extractionReady=false;zombies.splice(0).forEach(z=>scene.remove(z.root));ammoPools[0]={mag:30,reserve:120,max:30};ammoPools[1]={mag:30,reserve:120,max:30};weaponIndex=0;buildWeapon(0);$('startOverlay').style.display='none';$('endOverlay').classList.add('hidden');$('extractText').textContent='HOLD POSITION';$('controlsHint').style.display=isMobile()?'none':'block';if(!isMobile())canvas.requestPointerLock?.();beginWave();updateHUD();clock.getDelta();}
+function startGame(){if(gameStarted&&!gameOver)return;gameStarted=true;gameOver=false;health=100;stamina=100;kills=0;wave=0;spawned=0;waveTotal=0;wavePause=0;raidSeconds=0;extractionReady=false;bleeding=false;fractured=false;bleedTick=0;bandages=2;medkits=2;intelRecovered=0;reloading=false;camera.position.set(0,1.65,8);yaw=0;pitch=0;for(const item of intelItems){item.recovered=false;item.group.visible=true;}zombies.splice(0).forEach(z=>scene.remove(z.root));ammoPools[0]={mag:30,reserve:120,max:30};ammoPools[1]={mag:30,reserve:120,max:30};weaponIndex=0;buildWeapon(0);$('startOverlay').style.display='none';$('endOverlay').classList.add('hidden');$('extractText').textContent='HOLD POSITION';$('objective').textContent='RECOVER INTEL / CLEAR AREA';$('controlsHint').style.display=isMobile()?'none':'block';if(soundOn)initAudio();if(!isMobile())canvas.requestPointerLock?.();beginWave();updateHUD();clock.getDelta();}
 $('startBtn').addEventListener('click',startGame);$('restartBtn').addEventListener('click',startGame);
 canvas.addEventListener('click',()=>{if(gameStarted&&!gameOver&&!isMobile()&&document.pointerLockElement!==canvas)canvas.requestPointerLock?.();});
 document.addEventListener('mousemove',e=>{if(document.pointerLockElement===canvas&&gameStarted){yaw-=e.movementX*.0022;pitch-=e.movementY*.0022;pitch=THREE.MathUtils.clamp(pitch,-1.25,1.25);}});
-document.addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();if(!gameStarted)return;if(e.code==='KeyR')reload();if(e.code==='Digit1')switchWeapon(0);if(e.code==='Digit2')switchWeapon(1);if(e.code==='KeyQ')switchWeapon(1-weaponIndex);if(e.code==='KeyE'&&extractionReady)extract();if(e.code==='Space'){aiming=true;resize();}});
+document.addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();if(!gameStarted)return;if(e.code==='KeyR')reload();if(e.code==='KeyH')useBandage();if(e.code==='KeyV')useMedkit();if(e.code==='Digit1')switchWeapon(0);if(e.code==='Digit2')switchWeapon(1);if(e.code==='KeyQ')switchWeapon(1-weaponIndex);if(e.code==='KeyE')interact();if(e.code==='Space'){aiming=true;resize();}});
 document.addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Space'){aiming=false;resize();}});
 document.addEventListener('mousedown',e=>{if(e.button===0&&gameStarted){firing=true;shoot();}if(e.button===2){aiming=true;resize();}});
 document.addEventListener('mouseup',e=>{if(e.button===0)firing=false;if(e.button===2){aiming=false;resize();}});
 document.addEventListener('contextmenu',e=>e.preventDefault());
+function useBandage(){if(!gameStarted||gameOver)return;if(bandages<=0){showToast('NO BANDAGES LEFT');return;}if(!bleeding){showToast('NO ACTIVE BLEED');return;}bandages--;bleeding=false;playSfx('heal');showToast('BLEEDING STOPPED — BANDAGE APPLIED');updateHUD();}
+function useMedkit(){if(!gameStarted||gameOver)return;if(medkits<=0){showToast('NO IFAK LEFT');return;}if(health>=100&&!fractured){showToast('NO TREATMENT NEEDED');return;}medkits--;health=Math.min(100,health+45);fractured=false;playSfx('heal');showToast('IFAK APPLIED — CONDITION STABILIZED');updateHUD();}
+function atExtraction(){return Math.hypot(camera.position.x,camera.position.z-7)<3.5;}
+function checkExtraction(){const wavesCleared=wave>=3&&spawned===waveTotal&&!zombies.some(z=>z.alive);if(wavesCleared&&intelRecovered>=3&&!extractionReady){extractionReady=true;$('extractText').textContent=atExtraction()?'PRESS E TO EXTRACT':'RETURN TO INSERTION';$('objective').textContent='EXTRACTION AVAILABLE';showToast('OBJECTIVES COMPLETE — RETURN TO INSERTION');}else if(wavesCleared&&intelRecovered<3){$('objective').textContent='RECOVER REMAINING FIELD INTEL';}updateHUD();}
+function interact(){if(!gameStarted||gameOver)return;let nearest=null,dist=Infinity;for(const item of intelItems){if(item.recovered)continue;const d=Math.hypot(camera.position.x-item.x,camera.position.z-item.z);if(d<dist){dist=d;nearest=item;}}if(nearest&&dist<2.8){nearest.recovered=true;nearest.group.visible=false;intelRecovered++;playSfx('pickup');showToast(`FIELD INTEL RECOVERED — ${intelRecovered}/3`);checkExtraction();updateHUD();return;}if(extractionReady){if(atExtraction())extract();else showToast('RETURN TO INSERTION POINT');return;}showToast(nearest&&dist<8?'MOVE CLOSER TO THE INTEL CACHE':'NO INTERACTION IN RANGE');}
 function switchWeapon(index){if(index===weaponIndex)return;weaponIndex=index;buildWeapon(index);updateHUD();showToast(`LOADOUT: ${weaponNames[index]}`);}
-function reload(){if(!gameStarted||reloading)return;const p=ammoPools[weaponIndex];if(p.mag>=p.max||p.reserve<=0){showToast(p.reserve<=0?'NO RESERVE AMMO':'MAGAZINE FULL');return;}reloading=true;firing=false;$('reloadIndicator').classList.add('loading');$('reloadToast').classList.add('show');const duration=weaponIndex===0?1650:1350;setTimeout(()=>{if(!gameStarted||gameOver){reloading=false;return;}const take=Math.min(p.max-p.mag,p.reserve);p.mag+=take;p.reserve-=take;reloading=false;$('reloadIndicator').classList.remove('loading');$('reloadToast').classList.remove('show');updateHUD();},duration);}
-$('reloadBtn').addEventListener('pointerdown',e=>{e.preventDefault();reload();});$('swapBtn').addEventListener('pointerdown',e=>{e.preventDefault();switchWeapon(1-weaponIndex);});
+function reload(){if(!gameStarted||reloading)return;const p=ammoPools[weaponIndex];if(p.mag>=p.max||p.reserve<=0){showToast(p.reserve<=0?'NO RESERVE AMMO':'MAGAZINE FULL');return;}reloading=true;firing=false;playSfx('reload');$('reloadIndicator').classList.add('loading');$('reloadToast').classList.add('show');const duration=weaponIndex===0?1650:1350;setTimeout(()=>{if(!gameStarted||gameOver){reloading=false;return;}const take=Math.min(p.max-p.mag,p.reserve);p.mag+=take;p.reserve-=take;reloading=false;$('reloadIndicator').classList.remove('loading');$('reloadToast').classList.remove('show');updateHUD();},duration);}
+$('reloadBtn').addEventListener('pointerdown',e=>{e.preventDefault();reload();});$('swapBtn').addEventListener('pointerdown',e=>{e.preventDefault();switchWeapon(1-weaponIndex);});$('bandageBtn').addEventListener('click',useBandage);$('medkitBtn').addEventListener('click',useMedkit);
 $('aimBtn').addEventListener('pointerdown',e=>{e.preventDefault();aiming=!aiming;$('aimBtn').classList.toggle('active',aiming);resize();});
 $('fireBtn').addEventListener('pointerdown',e=>{e.preventDefault();firing=true;shoot();});for(const ev of ['pointerup','pointercancel','pointerleave'])$('fireBtn').addEventListener(ev,e=>{e.preventDefault();firing=false;});
-$('soundToggle').addEventListener('click',()=>{soundOn=!soundOn;$('soundToggle').style.color=soundOn?'var(--lime)':'#dfe4dc';showToast(soundOn?'AUDIO ENABLED':'AUDIO MUTED');});
+$('soundToggle').addEventListener('click',()=>setSound(!soundOn));
 // Drag anywhere on the right half to look around on touch screens.
 let lookTouch=null;
 canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&gameStarted&&e.clientX>window.innerWidth*.32){lookTouch={id:e.pointerId,x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);}});
@@ -187,7 +214,7 @@ stickZone.addEventListener('pointermove',e=>{if(stickId!==e.pointerId)return;con
 function resetStick(e){if(stickId!==e.pointerId)return;stickId=null;moveX=moveY=0;stickKnob.style.left='50%';stickKnob.style.top='50%';}
 for(const ev of ['pointerup','pointercancel','lostpointercapture'])stickZone.addEventListener(ev,resetStick);
 
-function shoot(){if(!gameStarted||gameOver||reloading||shotCooldown>0)return;const p=ammoPools[weaponIndex];if(p.mag<=0){showToast('MAGAZINE EMPTY — RELOAD');firing=false;return;}p.mag--;shotCooldown=weaponIndex===0?.105:.09;recoil=Math.min(recoil+.085,.28);muzzleFlash.intensity=55;setTimeout(()=>muzzleFlash.intensity=0,45);weaponRoot.position.z=.12;setTimeout(()=>weaponRoot.position.z=0,55);updateHUD();
+function shoot(){if(!gameStarted||gameOver||reloading||shotCooldown>0)return;const p=ammoPools[weaponIndex];if(p.mag<=0){showToast('MAGAZINE EMPTY — RELOAD');firing=false;return;}p.mag--;shotCooldown=weaponIndex===0?.105:.09;recoil=Math.min(recoil+.085,.28);playSfx('shot');muzzleFlash.intensity=55;setTimeout(()=>muzzleFlash.intensity=0,45);weaponRoot.position.z=.12;setTimeout(()=>weaponRoot.position.z=0,55);updateHUD();
  // Accurate center ray with a small first-shot cone, wider when hip firing.
  const spread=aiming?.0018:.008+recoil*.012;raycaster.setFromCamera(new THREE.Vector2((Math.random()-.5)*spread,(Math.random()-.5)*spread),camera);
  const targets=[];for(const z of zombies)if(z.alive)z.root.traverse(o=>{if(o.isMesh)targets.push(o);});
@@ -201,9 +228,9 @@ function shoot(){if(!gameStarted||gameOver||reloading||shotCooldown>0)return;con
  }
 }
 function killZombie(z,headshot){z.alive=false;kills++;z.root.rotation.x=-Math.PI/2;z.root.position.y=.12;setTimeout(()=>scene.remove(z.root),4000);const feed=document.createElement('div');feed.className='kill-entry';feed.innerHTML=`<span>${headshot?'HEADSHOT':'TARGET DOWN'}</span> &nbsp;INFECTED`;const box=$('killFeed');box.prepend(feed);setTimeout(()=>feed.remove(),4200);if(soundOn){}updateHUD();}
-function damagePlayer(amount){health=Math.max(0,health-amount);$('damageFlash').classList.remove('show');void $('damageFlash').offsetWidth;$('damageFlash').classList.add('show');updateHUD();if(health<=0)endGame(false);}
-function endGame(won){gameOver=true;firing=false;document.exitPointerLock?.();$('endOverlay').classList.remove('hidden');$('endEyebrow').textContent=won?'RAID COMPLETE':'OPERATOR DOWN';$('endTitle').textContent=won?'EXTRACTED':'KIA';$('endCopy').textContent=won?'You survived the outpost. Your squad will remember.':'The perimeter claimed another one. Go again.';$('finalKills').textContent=kills;$('finalTime').textContent=formatTime(raidSeconds);}
-function extract(){if(!extractionReady)return;endGame(true);}
+function damagePlayer(amount,canInjure=true){health=Math.max(0,health-amount);$('damageFlash').classList.remove('show');void $('damageFlash').offsetWidth;$('damageFlash').classList.add('show');playSfx('hit');if(canInjure&&!bleeding&&Math.random()<.24){bleeding=true;bleedTick=0;showToast('WOUNDED — APPLY A BANDAGE');}if(canInjure&&!fractured&&Math.random()<.13){fractured=true;showToast('LIMB FRACTURE — USE IFAK');}updateHUD();if(health<=0)endGame(false);}
+function endGame(won){gameOver=true;firing=false;document.exitPointerLock?.();$('endOverlay').classList.remove('hidden');$('endEyebrow').textContent=won?'RAID COMPLETE':'OPERATOR DOWN';$('endTitle').textContent=won?'EXTRACTED':'KIA';$('endCopy').textContent=won?'You survived the outpost. Your squad will remember.':'The perimeter claimed another one. Go again.';$('finalKills').textContent=kills;$('finalTime').textContent=formatTime(raidSeconds);updateHUD();}
+function extract(){if(!gameStarted||gameOver)return;if(!extractionReady){showToast('COMPLETE ALL RAID OBJECTIVES FIRST');return;}if(!atExtraction()){showToast('RETURN TO INSERTION POINT');return;}playSfx('pickup');endGame(true);}
 function formatTime(seconds){return `${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(Math.floor(seconds%60)).padStart(2,'0')}`;}
 
 function update(dt){
@@ -211,10 +238,11 @@ function update(dt){
  recoil=Math.max(0,recoil-dt*.42);
  if(gameStarted&&!gameOver){
   raidSeconds+=dt;$('raidTimer').textContent=formatTime(raidSeconds);
+  if(bleeding){bleedTick+=dt;if(bleedTick>=1){bleedTick-=1;damagePlayer(2,false);}}
   const forward=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0)-moveY;
   const strafe=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0)+moveX;
-  const sprint=(keys.ShiftLeft||keys.ShiftRight||Math.hypot(moveX,moveY)>.92)&&stamina>0&&Math.abs(forward)+Math.abs(strafe)>.2;
-  const speed=sprint?7.2:4.5;
+  const sprint=!fractured&&(keys.ShiftLeft||keys.ShiftRight||Math.hypot(moveX,moveY)>.92)&&stamina>0&&Math.abs(forward)+Math.abs(strafe)>.2;
+  const speed=sprint?7.2:fractured?3.7:4.5;
   if(sprint)stamina=Math.max(0,stamina-dt*20);else stamina=Math.min(100,stamina+dt*13);
   const len=Math.hypot(forward,strafe)||1;
   camera.position.x+=(Math.sin(yaw)*forward+Math.cos(yaw)*strafe)/len*speed*dt;
@@ -224,12 +252,13 @@ function update(dt){
   if(firing){fireTimer+=dt;if(fireTimer>.12){fireTimer=0;shoot();}}else fireTimer=0;
   nextSpawn-=dt;
   if(spawned<waveTotal&&nextSpawn<=0){spawnEnemy();nextSpawn=Math.max(.6,1.42-wave*.12+Math.random()*.65);}
-  for(const z of zombies){if(!z.alive)continue;const dx=camera.position.x-z.root.position.x,dz=camera.position.z-z.root.position.z,dist=Math.hypot(dx,dz);z.walk+=dt*7;
+  for(const z of zombies){if(!z.alive)continue;const dx=camera.position.x-z.root.position.x,dz=camera.position.z-z.root.position.z,dist=Math.hypot(dx,dz);z.walk+=dt*7;z.groan-=dt;if(z.groan<=0&&dist<28){playSfx('groan');z.groan=5+Math.random()*6;}
    if(dist>1.45){const pace=wave>2?1.12:1;z.root.position.x+=dx/(dist||1)*pace*dt;z.root.position.z+=dz/(dist||1)*pace*dt;z.root.rotation.y=Math.atan2(dx,dz);z.core.position.y=Math.abs(Math.sin(z.walk))*.035;for(const l of z.limbs)l.mesh.rotation.x=Math.sin(z.walk+l.phase)*(l.leg?.5:.48)+(l.leg?0:-.42);}
    else{z.attack-=dt;if(z.attack<=0){damagePlayer(7+Math.min(wave,4));z.attack=1.05;}}
   }
   const living=zombies.some(z=>z.alive);
-  if(spawned===waveTotal&&!living){if(wave<3){if(wavePause===0){wavePause=3.5;showToast('AREA CLEAR — RELOADING');}else{wavePause-=dt;if(wavePause<=0){wavePause=0;beginWave();}}}else if(!extractionReady){extractionReady=true;$('extractText').textContent='HOLD E TO EXTRACT';$('objective').textContent='EXTRACTION AVAILABLE';showToast('ALL HOSTILES CLEARED — EXTRACT');}}
+  if(spawned===waveTotal&&!living){if(wave<3){if(wavePause===0){wavePause=3.5;showToast('AREA CLEAR — NEXT WAVE INCOMING');}else{wavePause-=dt;if(wavePause<=0){wavePause=0;beginWave();}}}else checkExtraction();}
+  if(extractionReady)$('extractText').textContent=atExtraction()?'PRESS E TO EXTRACT':'RETURN TO INSERTION';
   if(reloading){/* visual state is driven by the magazine timer */}
   updateHUD();
  }
@@ -246,7 +275,7 @@ function update(dt){
 function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);update(dt);renderer.render(scene,camera);}
 
 // A small extraction interaction affordance doubles as the touch control.
-$('extractText').parentElement.parentElement.addEventListener('pointerdown',e=>{e.preventDefault();if(extractionReady)extract();});
+$('extractText').parentElement.parentElement.addEventListener('pointerdown',e=>{e.preventDefault();interact();});
 $('extractText').parentElement.parentElement.style.cursor='pointer';
 $('extractText').textContent='HOLD POSITION';
 updateHUD();

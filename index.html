@@ -20,6 +20,7 @@
     <section class="left-stack">
       <div class="raid-card"><div class="card-label">RAID STATUS <span id="raidTimer">00:00</span></div><div class="raid-main"><span class="raid-icon">◈</span><div><strong id="waveLabel">WAVE 01</strong><small id="waveSub">CONTACT IMMINENT</small></div></div><div class="progress-track"><i id="waveProgress"></i></div></div>
       <div class="threat"><span class="threat-symbol">⚠</span><span><b id="threatCount">0</b> HOSTILES IN AREA</span></div>
+      <div class="objective-card"><div class="objective-head">RAID OBJECTIVES <span id="intelCount">0/3</span></div><div class="objective-row" id="intelObjective"><i>□</i><span>Recover field intel</span></div><div class="objective-row" id="clearObjective"><i>□</i><span>Clear 3 hostile waves</span></div><div class="objective-row" id="extractObjective"><i>□</i><span>Reach extraction</span></div><small id="objectiveHint">Press E near marked intel</small></div>
     </section>
     <div class="compass"><span>W</span><i></i><span id="bearing">N&nbsp; 000°</span><i></i><span>E</span></div>
     <div class="crosshair"><i></i><i></i><i></i><i></i><b></b></div>
@@ -27,11 +28,11 @@
     <div class="damage-flash" id="damageFlash"></div>
     <section class="right-stack"><div class="status-pill"><span class="pulse"></span> FIELD COMMS <b>ACTIVE</b></div><div class="kill-feed" id="killFeed"></div></section>
     <footer class="hud-bottom">
-      <div class="vitals"><div class="vital-head"><span>OPERATOR CONDITION</span><span id="healthNum">100</span></div><div class="health-track"><i id="healthBar"></i></div><div class="vital-meta"><span>◈ <b id="stamina">100</b>% STAMINA</span><span>BLEEDING <b class="good">NO</b></span></div></div>
+      <div class="vitals"><div class="vital-head"><span>OPERATOR CONDITION</span><span id="healthNum">100</span></div><div class="health-track"><i id="healthBar"></i></div><div class="vital-meta"><span>◈ <b id="stamina">100</b>% STAMINA</span><span>BLEED <b id="bleedStatus" class="good">NO</b> · <b id="injuryStatus">STABLE</b></span></div><div class="med-row"><button id="bandageBtn" class="med-btn">H · BANDAGE <b id="bandageCount">2</b></button><button id="medkitBtn" class="med-btn">V · IFAK <b id="medkitCount">2</b></button></div></div>
       <div class="weapon-panel"><div class="weapon-top"><div><span class="weapon-class">ASSAULT RIFLE <i>7.62×39</i></span><strong id="weaponName">AK-103</strong></div><div class="fire-mode" id="fireMode">AUTO <span>▾</span></div></div><div class="ammo-row"><div class="ammo-count"><strong id="ammo">30</strong><span> / <b id="reserve">120</b></span></div><div class="ammo-details"><span id="ammoType">PS GZH</span><small>30 ROUND MAG</small></div><div class="reload-ring" id="reloadIndicator">R</div></div></div>
       <div class="extract-card"><span class="extract-icon">⌖</span><div><small>EXTRACTION</small><b id="extractText">HOLD POSITION</b></div><span class="extract-key">E</span></div>
     </footer>
-    <div class="controls-hint" id="controlsHint"><kbd>W A S D</kbd> MOVE <kbd>SHIFT</kbd> SPRINT <kbd>R</kbd> RELOAD <kbd>1 / 2</kbd> SWITCH</div>
+    <div class="controls-hint" id="controlsHint"><kbd>W A S D</kbd> MOVE <kbd>SHIFT</kbd> SPRINT <kbd>R</kbd> RELOAD <kbd>H / V</kbd> TREAT <kbd>E</kbd> INTERACT</div>
     <div class="reload-toast" id="reloadToast">RELOADING<span>...</span></div>
     <div class="toast" id="toast"></div>
     <div class="mobile-controls" id="mobileControls">
@@ -41,7 +42,7 @@
     <div class="overlay" id="startOverlay"><div class="briefing">
       <div class="brief-top"><span class="eyebrow"><i></i> OPERATION NIGHTFALL / 07</span><span class="brief-code">TARKOV REGION · 04:32 AM</span></div>
       <h1>THE DEAD<br><em>DON'T</em> EXTRACT.</h1>
-      <p class="brief-copy">Your squad is gone. The perimeter is overrun.<br>Clear the outpost. Make it to the extraction zone.</p>
+      <p class="brief-copy">Your squad is gone. Recover three intel caches and clear the perimeter.<br>Manage injuries, then reach extraction alive.</p>
       <div class="brief-stats"><div><span>AREA</span><b>INDUSTRIAL YARD</b></div><div><span>THREAT LEVEL</span><b class="threat-high">EXTREME</b></div><div><span>LOADOUT</span><b>AK-103 / MP5</b></div></div>
       <button class="start-btn" id="startBtn"><span>DEPLOY TO RAID</span><b>→</b></button>
       <div class="brief-foot"><span>WASD MOVE <i>·</i> MOUSE AIM <i>·</i> CLICK FIRE</span><span>TOUCH CONTROLS ENABLED</span></div>
